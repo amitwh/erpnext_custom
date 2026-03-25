@@ -35,10 +35,10 @@ RUN cd /home/frappe/frappe-bench && \
 
 # 4. Install additional Frappe apps (each in its own layer for caching).
 #    bench get-app handles: git clone → pip install → yarn install → bench build
+#    NOTE: HRMS removed — its vite/PWA frontend build fails in Docker BuildKit.
+#    Can be added back later via bench get-app on the running container.
 RUN cd /home/frappe/frappe-bench && \
     bench get-app --branch develop https://github.com/frappe/payments
-RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch version-16 https://github.com/frappe/hrms
 RUN cd /home/frappe/frappe-bench && \
     bench get-app --branch main https://github.com/frappe/helpdesk
 RUN cd /home/frappe/frappe-bench && \
