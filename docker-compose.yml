@@ -1,0 +1,136 @@
+# ERPNext v16 — Coolify deployment
+# Project: concreteinfo | App: erpnext-16
+#
+# Prerequisites (set in Coolify environment editor):
+#   DB_HOST, DB_PORT, DB_PASSWORD
+#   REDIS_CACHE, REDIS_QUEUE
+#
+# Coolify builds the image from Containerfile at repo root.
+# SSL and domain routing handled by Coolify's built-in Traefik.
+# Shared MariaDB + Redis defined in deploy/shared/docker-compose.yml.
+
+x-customizable-image: &customizable_image
+  image: ${CUSTOM_IMAGE:-erpnext-16}:${CUSTOM_TAG:-latest}
+  pull_policy: ${PULL_POLICY:-never}
+  restart: ${RESTART_POLICY:-unless-stopped}
+
+x-depends-on-configurator: &depends_on_configurator
+  depends_on:
+    configurator:
+      condition: service_completed_successfully
+
+x-backend-defaults: &backend_defaults
+  <<: [*depends_on_configurator, *customizable_image]
+  platform: linux/amd64
+  volumes:
+    - sites:/home/frappe/frappe-bench/sites
+  networks:
+    - bench-network
+    - shared-network
+
+services:
+
+  # One-shot service: writes common_site_config.json with DB/Redis connection info.
+  # All other services wait for this to complete before starting.
+  # Note: only *customizable_image is merged here — NOT *depends_on_configurator,
+  # since configurator must not depend on itself.
+  configurator:
+    <<: *customizable_image
+    platform: linux/amd64
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -gp db_port $$DB_PORT;
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
+        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      REDIS_CACHE: ${REDIS_CACHE}
+      REDIS_QUEUE: ${REDIS_QUEUE}
+      SOCKETIO_PORT: 9000
+    depends_on: {}
+    restart: on-failure
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+      - shared-network
+
+  backend:
+    <<: *backend_defaults
+
+  frontend:
+    <<: *customizable_image
+    platform: linux/amd64
+    command:
+      - nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      SOCKETIO: websocket:9000
+      # Site name must match the Frappe site created with bench new-site
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-cierp.concreteinfo.co.in}
+      # Real IP passthrough: trust Coolify's Traefik on the Docker bridge network
+      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-172.0.0.0/8}
+      UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
+      UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-on}
+      PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+      # shared-network required so Coolify's Traefik (which attaches to shared-network)
+      # can reach the frontend container to route cierp.concreteinfo.co.in traffic.
+      - shared-network
+    depends_on:
+      - backend
+      - websocket
+    # Port 8080 is exposed internally — Coolify's Traefik routes the domain here.
+    # Do NOT bind to a host port; let Coolify manage the routing.
+    expose:
+      - "8080"
+
+  websocket:
+    <<: [*depends_on_configurator, *customizable_image]
+    platform: linux/amd64
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    networks:
+      - bench-network
+      - shared-network
+
+  queue-short:
+    <<: *backend_defaults
+    command: bench worker --queue short,default
+
+  queue-long:
+    <<: *backend_defaults
+    # long worker also consumes short,default as fallback coverage
+    command: bench worker --queue long,default,short
+
+  scheduler:
+    <<: *backend_defaults
+    command: bench schedule
+
+volumes:
+  sites:
+
+networks:
+  # Internal network for service-to-service communication within this bench
+  bench-network:
+    name: erpnext-16-bench
+
+  # External network shared with MariaDB and Redis (defined in deploy/shared/)
+  shared-network:
+    name: shared-network
+    external: true
