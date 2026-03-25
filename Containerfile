@@ -48,11 +48,17 @@ RUN cd /home/frappe/frappe-bench && \
 RUN cd /home/frappe/frappe-bench && \
     bench get-app --skip-assets --branch main https://github.com/frappe/drive
 
-# 5. Install JS dependencies for all apps (yarn install) then build assets
-#    bench setup requirements --node installs node_modules for each app's package.json
-#    bench build compiles all frontend assets (esbuild + vite for apps with frontends)
+# 5. Install JS dependencies and build frontend assets
+#    - yarn install in each app that has a package.json (onscan.js for ERPNext POS, etc.)
+#    - bench build compiles all frontend assets (esbuild + vite)
 RUN cd /home/frappe/frappe-bench && \
-    bench setup requirements --node && \
+    for app in apps/*/; do \
+        if [ -f "$app/package.json" ]; then \
+            echo "Installing JS deps for $app" && \
+            cd /home/frappe/frappe-bench/$app && yarn install --check-files 2>/dev/null; \
+            cd /home/frappe/frappe-bench; \
+        fi; \
+    done && \
     bench build
 
 # 6. Strip .git directories to reduce final image size
