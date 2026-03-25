@@ -30,18 +30,28 @@ RUN /home/frappe/frappe-bench/env/bin/pip install \
     --no-cache-dir \
     -e /home/frappe/frappe-bench/apps/erpnext
 
-# 4. Install additional Frappe apps in dependency order:
-#    payments first (required_apps dependency of hrms)
-#    then hrms, then standalone apps
+# 4. Install additional Frappe apps in dependency order.
+#    Each app is a separate RUN for Docker layer caching — if one fails,
+#    previous apps don't need to be re-downloaded.
+#    --skip-assets: defer asset building to a single bench build at the end
+#    (avoids intermediate build failures from apps with complex frontend builds)
 RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch develop  https://github.com/frappe/payments  && \
-    bench get-app --branch version-16 https://github.com/frappe/hrms     && \
-    bench get-app --branch main     https://github.com/frappe/helpdesk  && \
-    bench get-app --branch main     https://github.com/frappe/crm       && \
-    bench get-app --branch develop  https://github.com/frappe/lms       && \
-    bench get-app --branch main     https://github.com/frappe/drive
+    bench get-app --skip-assets --branch develop  https://github.com/frappe/payments
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --skip-assets --branch version-16 https://github.com/frappe/hrms
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --skip-assets --branch main https://github.com/frappe/helpdesk
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --skip-assets --branch main https://github.com/frappe/crm
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --skip-assets --branch develop https://github.com/frappe/lms
+RUN cd /home/frappe/frappe-bench && \
+    bench get-app --skip-assets --branch main https://github.com/frappe/drive
 
-# 5. Strip .git directories to reduce final image size
+# 5. Build all frontend assets in one go (after all apps are installed)
+RUN cd /home/frappe/frappe-bench && bench build
+
+# 6. Strip .git directories to reduce final image size
 RUN find /home/frappe/frappe-bench/apps -mindepth 1 -path "*/.git" | xargs rm -fr
 
 # ── Runtime stage ──────────────────────────────────────────────────────────────
