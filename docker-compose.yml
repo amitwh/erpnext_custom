@@ -11,7 +11,12 @@
 
 x-customizable-image: &customizable_image
   image: ${CUSTOM_IMAGE:-erpnext-16}:${CUSTOM_TAG:-latest}
-  pull_policy: ${PULL_POLICY:-never}
+  build:
+    context: .
+    dockerfile: Containerfile
+    args:
+      - FRAPPE_BRANCH=${FRAPPE_BRANCH:-version-16}
+  pull_policy: ${PULL_POLICY:-build}
   restart: ${RESTART_POLICY:-unless-stopped}
 
 x-depends-on-configurator: &depends_on_configurator
