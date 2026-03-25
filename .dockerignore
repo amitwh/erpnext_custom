@@ -45,13 +45,11 @@ coverage.xml
 htmlcov/
 
 # Misc root files not needed at runtime
-yarn.lock
 babel_extractors.csv
 CODEOWNERS
 crowdin.yml
 commitlint.config.js
 license.txt
-package.json
 sponsors.md
 TRADEMARK_POLICY.md
 transaction-deletion-import-logic-summary.md
