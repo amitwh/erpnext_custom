@@ -1,0 +1,55 @@
+# Version control
+.git
+.github
+.gitignore
+.git-blame-ignore-revs
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+
+# Node
+node_modules
+.npm
+
+# Linting / editor config
+.eslintrc
+.editorconfig
+.flake8
+.pre-commit-config.yaml
+.semgrepignore
+.coderabbit.yml
+.stylelintrc
+sider.yml
+codecov.yml
+
+# Secrets and local env
+.env
+.env.*
+!.env.example
+
+# Deploy and docs (infrastructure YAML + markdown, not needed in image)
+docs/
+deploy/
+*.md
+
+# Test artifacts
+.pytest_cache
+coverage.xml
+htmlcov/
+
+# Misc root files not needed at runtime
+yarn.lock
+babel_extractors.csv
+CODEOWNERS
+crowdin.yml
+commitlint.config.js
+license.txt
+package.json
+sponsors.md
+TRADEMARK_POLICY.md
+transaction-deletion-import-logic-summary.md
