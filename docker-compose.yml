@@ -122,12 +122,10 @@ services:
     depends_on:
       - backend
       - websocket
-    # Port 8080 is exposed internally — Coolify's Traefik routes the domain here.
+    # Port 8080 — Coolify's Traefik routes the domain here.
+    # EXPOSE tells Docker (and Traefik) the container listens on 8080.
     expose:
       - "8080"
-    labels:
-      - traefik.http.services.http-0-${COOLIFY_RESOURCE_UUID:-o6ei61rlqc24bbdl22lb8rnc}-frontend.loadbalancer.server.port=8080
-      - traefik.http.services.https-0-${COOLIFY_RESOURCE_UUID:-o6ei61rlqc24bbdl22lb8rnc}-frontend.loadbalancer.server.port=8080
 
   websocket:
     <<: [*depends_on_configurator, *customizable_image]
