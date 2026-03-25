@@ -48,8 +48,12 @@ RUN cd /home/frappe/frappe-bench && \
 RUN cd /home/frappe/frappe-bench && \
     bench get-app --skip-assets --branch main https://github.com/frappe/drive
 
-# 5. Build all frontend assets in one go (after all apps are installed)
-RUN cd /home/frappe/frappe-bench && bench build
+# 5. Install JS dependencies for all apps (yarn install) then build assets
+#    bench setup requirements --node installs node_modules for each app's package.json
+#    bench build compiles all frontend assets (esbuild + vite for apps with frontends)
+RUN cd /home/frappe/frappe-bench && \
+    bench setup requirements --node && \
+    bench build
 
 # 6. Strip .git directories to reduce final image size
 RUN find /home/frappe/frappe-bench/apps -mindepth 1 -path "*/.git" | xargs rm -fr
