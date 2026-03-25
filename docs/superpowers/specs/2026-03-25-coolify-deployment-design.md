@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-25
 **Status:** Approved
-**Domain:** https://cierp.concreteinfo.co.in
+**Domain:** https://erp.concreteinfo.co.in
 
 ---
 
@@ -31,7 +31,7 @@ Coolify: "concreteinfo" project — app: "erpnext-16"
 └── docker-compose.yml     ← Coolify deploys this
     ├── configurator       (one-shot: writes common_site_config.json)
     ├── backend            (gunicorn :8000)
-    ├── frontend           (nginx :8080) ← Coolify routes cierp.concreteinfo.co.in
+    ├── frontend           (nginx :8080) ← Coolify routes erp.concreteinfo.co.in
     ├── websocket          (socketio :9000)
     ├── queue-short        (bench worker)
     ├── queue-long         (bench worker)
@@ -82,7 +82,7 @@ Build sequence:
 ## docker-compose.yml Design
 
 - No bundled reverse proxy — Coolify's Traefik handles SSL termination
-- `FRAPPE_SITE_NAME_HEADER` defaults to `cierp.concreteinfo.co.in`
+- `FRAPPE_SITE_NAME_HEADER` defaults to `erp.concreteinfo.co.in`
 - `UPSTREAM_REAL_IP_HEADER: X-Forwarded-For` for correct client IP behind Coolify's Traefik
 - `platform: linux/amd64` on all services
 - `configurator` is one-shot (`restart: on-failure`); all other services depend on it completing
@@ -127,6 +127,6 @@ REDIS_QUEUE=redis-queue-shared:6379
 1. Deploy `deploy/shared/docker-compose.yml` in "shared" project first
 2. In "concreteinfo" project, create app "erpnext-16" pointing to this repo
 3. Set Coolify to build from `Containerfile` at repo root
-4. Set domain `cierp.concreteinfo.co.in` on the `frontend` service (port 8080)
+4. Set domain `erp.concreteinfo.co.in` on the `frontend` service (port 8080)
 5. Add all env vars from `.env.example` in Coolify's environment editor
 6. After first deploy, exec into `backend` to run `bench new-site`

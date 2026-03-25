@@ -4,7 +4,7 @@
 
 **Goal:** Add all files needed to build and deploy this custom ERPNext v16 instance on Coolify, with shared MariaDB and Redis in a separate Coolify project.
 
-**Architecture:** Coolify builds a custom Docker image from `Containerfile` in this repo (copies local ERPNext source + installs 6 additional Frappe apps). The app is deployed via `docker-compose.yml` which connects to shared MariaDB and Redis services defined in `deploy/shared/docker-compose.yml`. Coolify's built-in Traefik handles SSL for `cierp.concreteinfo.co.in`.
+**Architecture:** Coolify builds a custom Docker image from `Containerfile` in this repo (copies local ERPNext source + installs 6 additional Frappe apps). The app is deployed via `docker-compose.yml` which connects to shared MariaDB and Redis services defined in `deploy/shared/docker-compose.yml`. Coolify's built-in Traefik handles SSL for `erp.concreteinfo.co.in`.
 
 **Tech Stack:** Docker multi-stage build, frappe/build:version-16, frappe/base:version-16, MariaDB 11.8, Redis 6.2-alpine, Docker Compose v2, Coolify
 
@@ -222,7 +222,7 @@ git commit -m "build: add Containerfile for custom ERPNext v16 with all apps"
 - Create: `docker-compose.yml`
 
 Note: This compose file is designed for Coolify. It has NO bundled reverse proxy — Coolify's
-Traefik handles SSL termination for `cierp.concreteinfo.co.in`. The `frontend` service exposes
+Traefik handles SSL termination for `erp.concreteinfo.co.in`. The `frontend` service exposes
 port 8080 internally; Coolify routes the domain to it.
 
 - [ ] **Step 1: Create docker-compose.yml**
@@ -305,7 +305,7 @@ services:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
       # Site name must match the Frappe site created with bench new-site
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-cierp.concreteinfo.co.in}
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-erp.concreteinfo.co.in}
       # Real IP passthrough: trust Coolify's Traefik on the Docker bridge network
       UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-172.0.0.0/8}
       UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
@@ -317,7 +317,7 @@ services:
     networks:
       - bench-network
       # shared-network required so Coolify's Traefik (which attaches to shared-network)
-      # can reach the frontend container to route cierp.concreteinfo.co.in traffic.
+      # can reach the frontend container to route erp.concreteinfo.co.in traffic.
       - shared-network
     depends_on:
       - backend
@@ -542,8 +542,8 @@ REDIS_CACHE=redis-cache-shared:6379
 REDIS_QUEUE=redis-queue-shared:6379
 
 # ── Site ──────────────────────────────────────────────────────────────────────
-# Must match the site name used in: bench new-site cierp.concreteinfo.co.in
-FRAPPE_SITE_NAME_HEADER=cierp.concreteinfo.co.in
+# Must match the site name used in: bench new-site erp.concreteinfo.co.in
+FRAPPE_SITE_NAME_HEADER=erp.concreteinfo.co.in
 
 # ── Nginx tuning (optional — defaults shown) ──────────────────────────────────
 # Increase PROXY_READ_TIMEOUT if print formats or reports time out
@@ -596,7 +596,7 @@ This guide walks through setting up the full ERPNext v16 stack on Coolify.
 ## Prerequisites
 
 - Coolify instance running (v4+)
-- DNS `A` record: `cierp.concreteinfo.co.in` → your server IP
+- DNS `A` record: `erp.concreteinfo.co.in` → your server IP
 - This repo pushed to a git remote accessible by Coolify
 
 ---
@@ -624,7 +624,7 @@ This guide walks through setting up the full ERPNext v16 stack on Coolify.
 2. Add a new **Docker Compose** resource, app name: **erpnext-16**
 3. Source: this git repo, compose file: `docker-compose.yml`
 4. Build: set Dockerfile path to `Containerfile` (Coolify builds the image on push)
-5. Set domain: `https://cierp.concreteinfo.co.in` on the `frontend` service (port `8080`)
+5. Set domain: `https://erp.concreteinfo.co.in` on the `frontend` service (port `8080`)
 
 ### Environment Variables
 
@@ -661,33 +661,33 @@ bench new-site \
   --db-root-password <DB_PASSWORD> \
   --install-app erpnext \
   --admin-password <admin-password> \
-  cierp.concreteinfo.co.in
+  erp.concreteinfo.co.in
 ```
 
 Install additional apps to the site (optional, run separately):
 
 ```bash
 # HR & Payroll
-bench --site cierp.concreteinfo.co.in install-app hrms
+bench --site erp.concreteinfo.co.in install-app hrms
 
 # Customer Support
-bench --site cierp.concreteinfo.co.in install-app helpdesk
+bench --site erp.concreteinfo.co.in install-app helpdesk
 
 # CRM
-bench --site cierp.concreteinfo.co.in install-app crm
+bench --site erp.concreteinfo.co.in install-app crm
 
 # Learning Management
-bench --site cierp.concreteinfo.co.in install-app lms
+bench --site erp.concreteinfo.co.in install-app lms
 
 # File Storage
-bench --site cierp.concreteinfo.co.in install-app drive
+bench --site erp.concreteinfo.co.in install-app drive
 ```
 
 ---
 
 ## Step 4: Verify
 
-1. Open `https://cierp.concreteinfo.co.in` in a browser
+1. Open `https://erp.concreteinfo.co.in` in a browser
 2. Log in with `Administrator` / `<admin-password>`
 3. Confirm installed apps: Settings → Installed Apps
 
@@ -703,7 +703,7 @@ To update after code changes:
 
 ```bash
 # In backend container terminal:
-bench --site cierp.concreteinfo.co.in migrate
+bench --site erp.concreteinfo.co.in migrate
 ```
 
 ---

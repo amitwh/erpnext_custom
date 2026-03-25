@@ -5,7 +5,7 @@ This guide walks through setting up the full ERPNext v16 stack on Coolify.
 ## Prerequisites
 
 - Coolify instance running (v4+)
-- DNS `A` record: `cierp.concreteinfo.co.in` → your server IP
+- DNS `A` record: `erp.concreteinfo.co.in` → your server IP
 - This repo pushed to a git remote accessible by Coolify
 
 ---
@@ -33,7 +33,7 @@ This guide walks through setting up the full ERPNext v16 stack on Coolify.
 2. Add a new **Docker Compose** resource, app name: **erpnext-16**
 3. Source: this git repo, compose file: `docker-compose.yml`
 4. Build: set Dockerfile path to `Containerfile` (Coolify builds the image on push)
-5. Set domain: `https://cierp.concreteinfo.co.in` on the `frontend` service (port `8080`)
+5. Set domain: `https://erp.concreteinfo.co.in` on the `frontend` service (port `8080`)
 
 ### Environment Variables
 
@@ -70,33 +70,33 @@ bench new-site \
   --db-root-password <DB_PASSWORD> \
   --install-app erpnext \
   --admin-password <admin-password> \
-  cierp.concreteinfo.co.in
+  erp.concreteinfo.co.in
 ```
 
 Install additional apps to the site (optional, run separately):
 
 ```bash
 # HR & Payroll
-bench --site cierp.concreteinfo.co.in install-app hrms
+bench --site erp.concreteinfo.co.in install-app hrms
 
 # Customer Support
-bench --site cierp.concreteinfo.co.in install-app helpdesk
+bench --site erp.concreteinfo.co.in install-app helpdesk
 
 # CRM
-bench --site cierp.concreteinfo.co.in install-app crm
+bench --site erp.concreteinfo.co.in install-app crm
 
 # Learning Management
-bench --site cierp.concreteinfo.co.in install-app lms
+bench --site erp.concreteinfo.co.in install-app lms
 
 # File Storage
-bench --site cierp.concreteinfo.co.in install-app drive
+bench --site erp.concreteinfo.co.in install-app drive
 ```
 
 ---
 
 ## Step 4: Verify
 
-1. Open `https://cierp.concreteinfo.co.in` in a browser
+1. Open `https://erp.concreteinfo.co.in` in a browser
 2. Log in with `Administrator` / `<admin-password>`
 3. Confirm installed apps: Settings → Installed Apps
 
@@ -112,7 +112,7 @@ To update after code changes:
 
 ```bash
 # In backend container terminal:
-bench --site cierp.concreteinfo.co.in migrate
+bench --site erp.concreteinfo.co.in migrate
 ```
 
 ---

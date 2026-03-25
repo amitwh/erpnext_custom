@@ -75,7 +75,7 @@ services:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
       # Site name must match the Frappe site created with bench new-site
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-cierp.concreteinfo.co.in}
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-erp.concreteinfo.co.in}
       # Real IP passthrough: trust Coolify's Traefik on the Docker bridge network
       UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-172.0.0.0/8}
       UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
@@ -87,7 +87,7 @@ services:
     networks:
       - bench-network
       # shared-network required so Coolify's Traefik (which attaches to shared-network)
-      # can reach the frontend container to route cierp.concreteinfo.co.in traffic.
+      # can reach the frontend container to route erp.concreteinfo.co.in traffic.
       - shared-network
     depends_on:
       - backend
