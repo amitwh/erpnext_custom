@@ -33,20 +33,14 @@ RUN cd /home/frappe/frappe-bench && \
     cd apps/erpnext && yarn install --check-files && \
     cd /home/frappe/frappe-bench && bench build --app erpnext
 
-# 4. Install additional Frappe apps (each in its own layer for caching).
-#    bench get-app handles: git clone → pip install → yarn install → bench build
-#    NOTE: HRMS removed — its vite/PWA frontend build fails in Docker BuildKit.
-#    Can be added back later via bench get-app on the running container.
+# 4. Install additional Frappe apps.
+#    Only payments included in the image build — other apps (hrms, helpdesk,
+#    crm, lms, drive) have complex frontend builds that fail in Docker BuildKit.
+#    Install them later on the running container via:
+#      bench get-app --branch <branch> <url>
+#      bench --site erp.concreteinfo.co.in install-app <app>
 RUN cd /home/frappe/frappe-bench && \
     bench get-app --branch develop https://github.com/frappe/payments
-RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch main https://github.com/frappe/helpdesk
-RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch main https://github.com/frappe/crm
-RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch develop https://github.com/frappe/lms
-RUN cd /home/frappe/frappe-bench && \
-    bench get-app --branch main https://github.com/frappe/drive
 
 # 5. Strip .git directories to reduce final image size
 RUN find /home/frappe/frappe-bench/apps -mindepth 1 -path "*/.git" | xargs rm -fr
