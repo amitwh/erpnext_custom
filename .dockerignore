@@ -35,7 +35,9 @@ codecov.yml
 # Deploy and docs (infrastructure YAML + markdown, not needed in image)
 docs/
 deploy/
+# Exclude markdown files except README.md (required by pyproject.toml readme field for flit build)
 *.md
+!README.md
 
 # Test artifacts
 .pytest_cache
