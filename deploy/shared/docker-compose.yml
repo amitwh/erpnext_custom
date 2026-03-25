@@ -1,0 +1,67 @@
+# Shared infrastructure for all Frappe/ERPNext benches on this server.
+# Deploy this in Coolify project: "shared"
+#
+# Creates:
+#   mariadb-shared     — MariaDB 11.8 database server
+#   redis-cache-shared — Redis for Frappe caching (ephemeral)
+#   redis-queue-shared — Redis for background job queues (persistent)
+#   shared-network     — Docker network bridging shared services to app benches
+#
+# Required env var in Coolify:
+#   DB_PASSWORD — root password for MariaDB
+
+services:
+
+  mariadb:
+    image: mariadb:11.8
+    container_name: mariadb-shared
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      # Allow root connections from any host (required so bench new-site can connect
+      # from the backend container across the Docker network)
+      MARIADB_ROOT_HOST: "%"
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - shared-network
+
+  redis-cache:
+    image: redis:6.2-alpine
+    container_name: redis-cache-shared
+    restart: unless-stopped
+    # No persistence — cache data is ephemeral by design
+    networks:
+      - shared-network
+
+  redis-queue:
+    image: redis:6.2-alpine
+    container_name: redis-queue-shared
+    restart: unless-stopped
+    # Persist queue data so background jobs survive container restarts
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - shared-network
+
+volumes:
+  mariadb-data:
+  redis-queue-data:
+
+networks:
+  shared-network:
+    # This network is created here. The ERPNext compose references it as external: true.
+    # Name must match exactly: shared-network
+    name: shared-network
