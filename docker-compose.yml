@@ -2,12 +2,12 @@
 # Project: concreteinfo | App: erpnext-16
 #
 # Prerequisites (set in Coolify environment editor):
-#   DB_HOST, DB_PORT, DB_PASSWORD
-#   REDIS_CACHE, REDIS_QUEUE
+#   DB_HOST, DB_PORT (pointing to existing shared-mariadb on coolify network)
 #
 # Coolify builds the image from Containerfile at repo root.
 # SSL and domain routing handled by Coolify's built-in Traefik.
-# Shared MariaDB + Redis defined in deploy/shared/docker-compose.yml.
+# Redis cache + queue are embedded in this compose (bench-specific).
+# MariaDB is the existing shared-mariadb in the "shared" Coolify project.
 
 x-customizable-image: &customizable_image
   image: ${CUSTOM_IMAGE:-erpnext-16}:${CUSTOM_TAG:-latest}
@@ -26,13 +26,32 @@ x-backend-defaults: &backend_defaults
     - sites:/home/frappe/frappe-bench/sites
   networks:
     - bench-network
-    - shared-network
+    - coolify
 
 services:
 
-  # One-shot service: writes common_site_config.json with DB/Redis connection info.
+  # ── Redis (bench-specific, embedded) ──────────────────────────────────────────
+
+  redis-cache:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    # No persistence — cache is ephemeral by design
+    networks:
+      - bench-network
+
+  redis-queue:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    # Persist queue data so background jobs survive container restarts
+    volumes:
+      - redis-queue-data:/data
+    networks:
+      - bench-network
+
+  # ── Configurator (one-shot) ───────────────────────────────────────────────────
+  # Writes common_site_config.json with DB/Redis connection info.
   # All other services wait for this to complete before starting.
-  # Note: only *customizable_image is merged here — NOT *depends_on_configurator,
+  # Note: only *customizable_image is merged — NOT *depends_on_configurator,
   # since configurator must not depend on itself.
   configurator:
     <<: *customizable_image
@@ -52,16 +71,22 @@ services:
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-3306}
-      REDIS_CACHE: ${REDIS_CACHE}
-      REDIS_QUEUE: ${REDIS_QUEUE}
+      REDIS_CACHE: ${REDIS_CACHE:-redis-cache:6379}
+      REDIS_QUEUE: ${REDIS_QUEUE:-redis-queue:6379}
       SOCKETIO_PORT: 9000
-    depends_on: {}
+    depends_on:
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
     restart: on-failure
     volumes:
       - sites:/home/frappe/frappe-bench/sites
     networks:
       - bench-network
-      - shared-network
+      - coolify
+
+  # ── Application services ──────────────────────────────────────────────────────
 
   backend:
     <<: *backend_defaults
@@ -86,9 +111,9 @@ services:
       - sites:/home/frappe/frappe-bench/sites
     networks:
       - bench-network
-      # shared-network required so Coolify's Traefik (which attaches to shared-network)
-      # can reach the frontend container to route erp.concreteinfo.co.in traffic.
-      - shared-network
+      # coolify network required so Coolify's Traefik can reach the frontend
+      # container to route erp.concreteinfo.co.in traffic.
+      - coolify
     depends_on:
       - backend
       - websocket
@@ -107,7 +132,7 @@ services:
       - sites:/home/frappe/frappe-bench/sites
     networks:
       - bench-network
-      - shared-network
+      - coolify
 
   queue-short:
     <<: *backend_defaults
@@ -124,13 +149,13 @@ services:
 
 volumes:
   sites:
+  redis-queue-data:
 
 networks:
   # Internal network for service-to-service communication within this bench
   bench-network:
     name: erpnext-16-bench
 
-  # External network shared with MariaDB and Redis (defined in deploy/shared/)
-  shared-network:
-    name: shared-network
+  # Coolify's managed network — connects to shared MariaDB and Traefik proxy
+  coolify:
     external: true
