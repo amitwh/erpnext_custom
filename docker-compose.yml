@@ -67,13 +67,21 @@ services:
       - -c
     command:
       - >
-        ls -1 apps > sites/apps.txt;
-        bench set-config -g db_host $$DB_HOST;
-        bench set-config -gp db_port $$DB_PORT;
-        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
-        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
-        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
-        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+        cd /home/frappe/frappe-bench;
+        for app in apps/*/; do
+          app_name=$$(basename $$app);
+          if ./env/bin/python -c "import $$app_name" 2>/dev/null; then
+            echo $$app_name;
+          fi;
+        done > sites/apps.txt;
+        echo '{"db_host":"'$$DB_HOST'","db_port":'$$DB_PORT',"redis_cache":"redis://'$$REDIS_CACHE'","redis_queue":"redis://'$$REDIS_QUEUE'","redis_socketio":"redis://'$$REDIS_QUEUE'","socketio_port":'$$SOCKETIO_PORT'}' | python3 -c "
+        import json,sys,os;
+        new=json.load(sys.stdin);
+        path='/home/frappe/frappe-bench/sites/common_site_config.json';
+        old=json.load(open(path)) if os.path.exists(path) else {};
+        old.update(new);
+        json.dump(old,open(path,'w'),indent=1)
+        ";
     environment:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT:-3306}
