@@ -30,6 +30,7 @@ x-backend-defaults: &backend_defaults
   volumes:
     - sites:/home/frappe/frappe-bench/sites
     - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
   networks:
     - bench-network
     - coolify
@@ -97,6 +98,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
     networks:
       - bench-network
       - coolify
@@ -125,6 +127,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
     networks:
       - bench-network
       # coolify network required so Coolify's Traefik can reach the frontend
@@ -149,6 +152,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - apps:/home/frappe/frappe-bench/apps
+      - env:/home/frappe/frappe-bench/env
     networks:
       - bench-network
       - coolify
@@ -169,6 +173,7 @@ services:
 volumes:
   sites:
   apps:
+  env:
   redis-queue-data:
 
 networks:
