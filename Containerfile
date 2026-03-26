@@ -71,6 +71,5 @@ CMD [ \
     "--worker-class=gthread", \
     "--worker-tmp-dir=/dev/shm", \
     "--timeout=120", \
-    "--preload", \
     "frappe.app:application" \
 ]
